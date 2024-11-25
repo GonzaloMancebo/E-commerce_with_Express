@@ -46,95 +46,84 @@ router.get('/:id', (req, res) => {
     }
 });
 
-// Agregar un nuevo producto
 router.post('/', (req, res) => {
-    const productData = Array.isArray(req.body) ? req.body[0] : req.body;
-    const { title, description, code, price, status = true, stock, category, thumbnails = [] } = productData;
+    const productData = Array.isArray(req.body) ? req.body : [req.body];  
 
-    if (!title || !description || !code || !price || !stock || !category) {
-        console.log("Faltan campos, no se puede crear el producto.");
-        return res.status(400).send('All fields are required');
-    }
+    productData.forEach(product => {
+        const { title, description, code, price, status = true, stock, category, thumbnails = [] } = product;
 
-    const id = uuidv4();
-    const newProduct = {
-        id,
-        title,
-        description,
-        code,
-        price,
-        status,
-        stock,
-        category,
-        thumbnails
-    };
+        if (!title || !description || !code || !price || !stock || !category) {
+            return res.status(400).send('All fields are required');
+        }
 
-    console.log("Nuevo producto creado:", newProduct);
+        const id = uuidv4();
+        const newProduct = {
+            id,
+            title,
+            description,
+            code,
+            price,
+            status,
+            stock,
+            category,
+            thumbnails
+        };
 
-    // Leemos los productos existentes
-    let products = [];
-    try {
-        products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-    } catch (error) {
-        // Si no hay productos o el archivo no existe, inicializamos un array vacío
-        products = [];
-    }
+        console.log("Nuevo producto creado:", newProduct);
 
-    // Agregamos el nuevo producto al array
-    products.push(newProduct);
+        // Leemos los productos existentes
+        let products = [];
+        try {
+            products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+        } catch (error) {
+            // Si no hay productos o el archivo no existe, inicializamos un array vacío
+            products = [];
+        }
 
-    // Guardamos los productos actualizados en el archivo JSON
-    try {
-        fs.writeFileSync(dataPath, JSON.stringify(products, null, 2));
-    } catch (error) {
-        console.error("Error al guardar los productos:", error);
-        return res.status(500).send('Error saving product data');
-    }
+        // Agregamos el nuevo producto al array
+        products.push(newProduct);
 
-    res.status(201).json(newProduct);
+        // Guardamos los productos actualizados en el archivo JSON
+        try {
+            fs.writeFileSync(dataPath, JSON.stringify(products, null, 2));
+        } catch (error) {
+            console.error("Error al guardar los productos:", error);
+            return res.status(500).send('Error saving product data');
+        }
+    });
+
+    res.status(201).json({ message: 'Productos creados correctamente' });
 });
+
 
 // Actualizar un producto por su id
 router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { title, description, code, price, status, stock, category, thumbnails } = req.body;
     
-// Leemos los productos existentes
-let products = [];
-try {
-    products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-    console.log("Productos existentes antes de agregar el nuevo:", products);
-} catch (error) {
-    // Si no hay productos o el archivo no existe, inicializamos un array vacío
-    console.log("No hay productos o el archivo no existe, inicializando vacío.");
-    products = [];
-}
+    // Leemos los productos existentes
+    let products = [];
+    try {
+        products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+    } catch (error) {
+        console.error("Error al leer los productos para actualización:", error);
+        return res.status(500).send("Error reading products data");
+    }
 
-// Agregamos el nuevo producto al array
-products.push(newProduct);
-console.log("Productos después de agregar el nuevo:", products);
-
-// Guardamos los productos actualizados en el archivo JSON
-try {
-    fs.writeFileSync(dataPath, JSON.stringify(products, null, 2));
-    console.log("Archivo actualizado con los productos:", products);
-} catch (error) {
-    console.error("Error al guardar los productos:", error);
-    return res.status(500).send('Error saving product data');
-}
-
+    // Buscar el producto que queremos actualizar
     const productIndex = products.findIndex(p => p.id === id);
 
     if (productIndex === -1) {
         return res.status(404).send('Product not found');
     }
 
-    // No actualizamos el id, solo los demás campos
+    // Actualizamos los campos del producto, sin modificar el id
     products[productIndex] = { ...products[productIndex], title, description, code, price, status, stock, category, thumbnails };
 
-    // Guardamos los productos actualizados
+    // Guardamos los productos actualizados en el archivo JSON
     try {
         fs.writeFileSync(dataPath, JSON.stringify(products, null, 2));
+        console.log("Producto actualizado:", products[productIndex]);
     } catch (error) {
         console.error("Error al guardar los productos actualizados:", error);
         return res.status(500).send('Error saving updated product data');
@@ -164,7 +153,7 @@ router.delete('/:id', (req, res) => {
     // Eliminamos el producto
     products.splice(productIndex, 1);
 
-    // Guardamos los productos actualizados
+    // Guardamos los productos actualizados en el archivo JSON
     try {
         fs.writeFileSync(dataPath, JSON.stringify(products, null, 2));
     } catch (error) {
