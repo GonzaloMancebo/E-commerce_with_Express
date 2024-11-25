@@ -10,7 +10,7 @@ const dataPath = path.resolve('src/data/products.json');
 
 // Obtener todos los productos con la opción de limitar la cantidad
 router.get('/', (req, res) => {
-    const { limit } = req.query; // Obtener el parámetro limit de la consulta
+    const { limit } = req.query; 
 
     try {
         let products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
