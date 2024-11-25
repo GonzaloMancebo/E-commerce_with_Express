@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "dependencies": {
+    "express": "^4.21.1",
+    "uuid": "^11.0.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch ./src/app.js"
+  }
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "4e1094ea-1afc-403c-bcb3-abc32cd07003",
+    "title": "Smartphone XYZ",
+    "description": "Latest model with 5G support.",
+    "code": "SMXYZ123",
+    "price": 799.99,
+    "status": true,
+    "stock": 50,
+    "category": "Electronics",
+    "thumbnails": [
+      "image1.jpg",
+      "image2.jpg"
+    ]
+  },
+  {
+    "id": "f5e6c607-7c40-4676-a9a6-3a420b10302e",
+    "title": "Smartphone XYZ",
+    "description": "Latest model with 5G support.",
+    "code": "SMXYZ123",
+    "price": 799.99,
+    "status": true,
+    "stock": 50,
+    "category": "Electronics",
+    "thumbnails": [
+      "image1.jpg",
+      "image2.jpg"
+    ]
+  },
+  {
+    "id": "cb37aab8-a1ef-45dc-a627-64bb037e9da9",
+    "title": "Smartphone XYZ",
+    "description": "Latest model with 5G support.",
+    "code": "SMXYZ123",
+    "price": 799.99,
+    "status": true,
+    "stock": 50,
+    "category": "Electronics",
+    "thumbnails": [
+      "image1.jpg",
+      "image2.jpg"
+    ]
+  }
+]
