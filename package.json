@@ -2,6 +2,8 @@
   "type": "module",
   "dependencies": {
     "express": "^4.21.1",
+    "express-handlebars": "^8.0.1",
+    "socket.io": "^4.8.1",
     "uuid": "^11.0.3"
   },
   "scripts": {

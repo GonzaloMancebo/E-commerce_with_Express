@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Products</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Asegura que el body tenga al menos la altura completa de la pantalla */
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        nav ul li {
+            margin: 0 15px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: black;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: color 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: #d4edda;
+        }
+
+        main {
+            padding: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            flex: 1; /* Esto hace que el main ocupe el espacio restante */
+        }
+
+        main h3 {
+            font-size: 2em;
+            color: #333;
+        }
+
+        h4 {
+            font-size: 1.3em;
+            margin-top: 30px;
+            color: #333;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        ul li {
+            font-size: 1.1em;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        ul li:hover {
+            background-color: #e0f7e0;
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #d32f2f;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #333;
+            color: white;
+            margin-top: 30px;
+        }
+
+        footer p {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>E-commerce - Real-time Products</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/realtimeproducts">Real-time Products</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h3>Real-time Product List</h3>
+        <ul id="product-list">
+            {{#each products}}
+            <li>
+                {{this.name}} - ${{this.price}} 
+                <button class="delete-product" data-index="{{@index}}">Delete</button>
+            </li>
+            {{/each}}
+        </ul>
+
+        <h4>Add Product</h4>
+        <form id="add-product-form">
+            <input type="text" id="product-name" placeholder="Product Name" required>
+            <input type="number" id="product-price" placeholder="Product Price" required>
+            <button type="submit">Add Product</button>
+        </form>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 E-commerce. All rights reserved.</p>
+    </footer>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Escuchar la actualización de productos desde Socket.io
+        socket.on('updateProducts', (products) => {
+            const productList = document.getElementById('product-list');
+            productList.innerHTML = ''; // Limpiar lista
+
+            // Renderizar productos actualizados
+            products.forEach((product, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `${product.name} - $${product.price} <button class="delete-product" data-index="${index}">Delete</button>`;
+                productList.appendChild(li);
+            });
+        });
+
+        // Agregar producto desde el formulario
+        document.getElementById('add-product-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            
+            const name = document.getElementById('product-name').value;
+            const price = document.getElementById('product-price').value;
+
+            socket.emit('addProduct', { name, price });
+
+            // Limpiar los campos del formulario
+            document.getElementById('product-name').value = '';
+            document.getElementById('product-price').value = '';
+        });
+
+        // Eliminar producto
+        document.getElementById('product-list').addEventListener('click', (event) => {
+            if (event.target.classList.contains('delete-product')) {
+                const productIndex = event.target.getAttribute('data-index');
+                socket.emit('deleteProduct', parseInt(productIndex));
+            }
+        });
+    </script>
+</body>
+</html>
