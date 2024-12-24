@@ -1,134 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-commerce</title>
-    <style>
-        /* Estilos generales */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh; /* Asegura que el body tenga al menos la altura completa de la pantalla */
-        }
-
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 2.5em;
-        }
-
-        nav ul {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            margin: 10px 0;
-        }
-
-        nav ul li {
-            margin: 0 15px;
-        }
-
-        nav ul li a {
-            text-decoration: none;
-            color: black;
-            font-weight: bold;
-            font-size: 1.1em;
-            transition: color 0.3s;
-        }
-
-        nav ul li a:hover {
-            color: #d4edda;
-        }
-
-        main {
-            padding: 30px;
-            max-width: 1000px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            flex: 1; /* Esto hace que el main ocupe el espacio restante */
-        }
-
-        main h2 {
-            font-size: 2.2em;
-            color: #333;
-        }
-
-        main h3 {
-            font-size: 1.5em;
-            margin-top: 20px;
-            color: #555;
-        }
-
-        ul {
-            list-style: none;
-            padding: 0;
-            margin-top: 20px;
-        }
-
-        ul li {
-            font-size: 1.1em;
-            margin: 10px 0;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        ul li:hover {
-            background-color: #e0f7e0;
-        }
-
-        footer {
-            text-align: center;
-            padding: 15px;
-            background-color: #333;
-            color: white;
-            margin-top: 30px;
-        }
-
-        footer p {
-            margin: 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/style.css">
+  <title>Productos</title>
 </head>
 <body>
-    <header>
-        <h1>E-commerce</h1>
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/realtimeproducts">Real-time Products</a></li>
-            </ul>
-        </nav>
-    </header>
+  <h1>Productos</h1>
+  <ul>
+    {{#each products}}
+      <li>
+        <h2>{{this.title}}</h2>
+        <p>{{this.description}}</p>
+        <p>Precio: ${{this.price}}</p>
+        <p>Categoría: {{this.category}}</p>
+        <a href="/products/{{this._id}}">Ver más</a>
+        <button onclick="addToCart('{{this._id}}')">Agregar al carrito</button>
+      </li>
+    {{/each}}
+  </ul>
 
-    <main>
-        <h2>Welcome to E-commerce</h2>
-        <h3>Product List</h3>
-        <ul>
-            {{#each products}}
-            <li>{{this.name}} - ${{this.price}}</li>
-            {{/each}}
-        </ul>
-    </main>
+  <div>
+    <!-- Enlace para la página anterior -->
+    {{#if hasPrevPage}}
+      <a href="/products?page={{prevPage}}&limit={{limit}}&sort={{sort}}&query={{query}}">Página Anterior</a>
+    {{/if}}
 
-    <footer>
-        <p>&copy; 2023 E-commerce. All rights reserved.</p>
-    </footer>
+    <!-- Mostrar los números de página -->
+    <div>
+      {{#each pages}}
+        <a href="/products?page={{this}}&limit={{limit}}&sort={{sort}}&query={{query}}">{{this}}</a>
+      {{/each}}
+    </div>
+
+    <!-- Mostrar el número de página actual y el total -->
+    <span>Página {{page}} de {{totalPages}}</span>
+
+    <!-- Enlace para la página siguiente -->
+    {{#if hasNextPage}}
+      <a href="/products?page={{nextPage}}&limit={{limit}}&sort={{sort}}&query={{query}}">Página Siguiente</a>
+    {{/if}}
+  </div>
+
+  <script>
+    function addToCart(productId) {
+      fetch('/api/carts', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          productId: productId,
+          quantity: 1
+        })
+      }).then(response => response.json())
+        .then(data => {
+          console.log('Producto agregado al carrito:', data);
+        })
+        .catch(error => console.error('Error:', error));
+    }
+  </script>
 </body>
 </html>

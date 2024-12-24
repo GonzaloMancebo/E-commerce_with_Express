@@ -1,167 +1,98 @@
 import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import Product from '../models/Product.js';
 
 const router = express.Router();
 
-// Ruta donde se encuentran los productos (el archivo JSON)
-const dataPath = path.resolve('src/data/products.json');
+// Ruta para crear un nuevo producto
+router.post('/', async (req, res) => {
+  try {
+    // Desestructuramos el body de la solicitud
+    const { title, description, code, price, stock, category, thumbnails } = req.body;
 
-// Obtener todos los productos con la opción de limitar la cantidad
-router.get('/', (req, res) => {
-    const { limit } = req.query; 
-
-    try {
-        let products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-        console.log("Productos obtenidos:", products);
-
-        if (limit) {
-            products = products.slice(0, parseInt(limit)); // Limitar la cantidad de productos
-        }
-
-        res.json(products);
-    } catch (error) {
-        console.error("Error al leer productos:", error);
-        res.status(500).send("Error reading products data");
+    // Validamos que los campos requeridos estén presentes
+    if (!title || !description || !code || !price || !stock || !category) {
+      return res.status(400).json({ status: 'error', message: 'Faltan campos requeridos' });
     }
-});
 
-// Obtener un producto por su id
-router.get('/:id', (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-        const product = products.find(p => p.id === id);
-
-        if (!product) {
-            return res.status(404).send('Product not found');
-        }
-
-        res.json(product);
-    } catch (error) {
-        console.error("Error al leer productos:", error);
-        res.status(500).send("Error reading product data");
-    }
-});
-
-router.post('/', (req, res) => {
-    const productData = Array.isArray(req.body) ? req.body : [req.body];  
-
-    productData.forEach(product => {
-        const { title, description, code, price, status = true, stock, category, thumbnails = [] } = product;
-
-        if (!title || !description || !code || !price || !stock || !category) {
-            return res.status(400).send('All fields are required');
-        }
-
-        const id = uuidv4();
-        const newProduct = {
-            id,
-            title,
-            description,
-            code,
-            price,
-            status,
-            stock,
-            category,
-            thumbnails
-        };
-
-        console.log("Nuevo producto creado:", newProduct);
-
-        // Leemos los productos existentes
-        let products = [];
-        try {
-            products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-        } catch (error) {
-            // Si no hay productos o el archivo no existe, inicializamos un array vacío
-            products = [];
-        }
-
-        // Agregamos el nuevo producto al array
-        products.push(newProduct);
-
-        // Guardamos los productos actualizados en el archivo JSON
-        try {
-            fs.writeFileSync(dataPath, JSON.stringify(products, null, 2));
-        } catch (error) {
-            console.error("Error al guardar los productos:", error);
-            return res.status(500).send('Error saving product data');
-        }
+    // Creamos un nuevo producto con los datos recibidos
+    const newProduct = new Product({
+      title,
+      description,
+      code,
+      price,
+      stock,
+      category,
+      thumbnails,
     });
 
-    res.status(201).json({ message: 'Productos creados correctamente' });
+    // Guardamos el nuevo producto en la base de datos
+    await newProduct.save();
+
+    // Respondemos con el producto creado
+    res.status(201).json({ status: 'success', payload: newProduct });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
 });
 
 
-// Actualizar un producto por su id
-router.put('/:id', (req, res) => {
-    const { id } = req.params;
-    const { title, description, code, price, status, stock, category, thumbnails } = req.body;
-    
-    // Leemos los productos existentes
-    let products = [];
-    try {
-        products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-    } catch (error) {
-        console.error("Error al leer los productos para actualización:", error);
-        return res.status(500).send("Error reading products data");
-    }
+// Ruta para obtener productos con filtros, paginación y ordenamiento
+router.get('/', async (req, res) => {
+  try {
+    // Obtener parámetros de query
+    const { limit = 10, page = 1, sort = 'asc', query = '' } = req.query;
 
-    // Buscar el producto que queremos actualizar
-    const productIndex = products.findIndex(p => p.id === id);
+    // Convertimos los valores de `limit` y `page` a enteros
+    const limitInt = parseInt(limit);
+    const pageInt = parseInt(page);
 
-    if (productIndex === -1) {
-        return res.status(404).send('Product not found');
-    }
+    // Definir el filtro de búsqueda
+    const filter = query ? { category: query } : {};
 
-    // Actualizamos los campos del producto, sin modificar el id
-    products[productIndex] = { ...products[productIndex], title, description, code, price, status, stock, category, thumbnails };
+    // Definir el ordenamiento
+    const sortBy = sort === 'desc' ? { price: -1 } : { price: 1 };
 
-    // Guardamos los productos actualizados en el archivo JSON
-    try {
-        fs.writeFileSync(dataPath, JSON.stringify(products, null, 2));
-        console.log("Producto actualizado:", products[productIndex]);
-    } catch (error) {
-        console.error("Error al guardar los productos actualizados:", error);
-        return res.status(500).send('Error saving updated product data');
-    }
+    // Obtener productos con paginación, filtrado y ordenamiento
+    const products = await Product.find(filter)
+      .sort(sortBy)
+      .limit(limitInt)
+      .skip((pageInt - 1) * limitInt);
 
-    res.json(products[productIndex]);
+    // Contar el total de productos para calcular las páginas
+    const totalProducts = await Product.countDocuments(filter);
+    const totalPages = Math.ceil(totalProducts / limitInt);
+
+    // Enviar respuesta
+    res.json({
+      status: 'success',
+      payload: products,
+      totalPages,
+      prevPage: pageInt > 1 ? pageInt - 1 : null,
+      nextPage: pageInt < totalPages ? pageInt + 1 : null,
+      page: pageInt,
+      hasPrevPage: pageInt > 1,
+      hasNextPage: pageInt < totalPages,
+      prevLink: pageInt > 1 ? `/api/products?page=${pageInt - 1}&limit=${limitInt}&sort=${sort}&query=${query}` : null,
+      nextLink: pageInt < totalPages ? `/api/products?page=${pageInt + 1}&limit=${limitInt}&sort=${sort}&query=${query}` : null,
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
 });
 
-// Eliminar un producto por su id
-router.delete('/:id', (req, res) => {
-    const { id } = req.params;
-
-    let products = [];
-    try {
-        products = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-    } catch (error) {
-        console.error("Error al leer los productos para eliminación:", error);
-        return res.status(500).send("Error reading products data");
+// Ruta para obtener un producto por ID
+router.get('/:pid', async (req, res) => {
+  try {
+    const { pid } = req.params;
+    const product = await Product.findById(pid);
+    if (!product) {
+      return res.status(404).json({ status: 'error', message: 'Product not found' });
     }
-
-    const productIndex = products.findIndex(p => p.id === id);
-
-    if (productIndex === -1) {
-        return res.status(404).send('Product not found');
-    }
-
-    // Eliminamos el producto
-    products.splice(productIndex, 1);
-
-    // Guardamos los productos actualizados en el archivo JSON
-    try {
-        fs.writeFileSync(dataPath, JSON.stringify(products, null, 2));
-    } catch (error) {
-        console.error("Error al guardar los productos después de eliminación:", error);
-        return res.status(500).send('Error saving product data after deletion');
-    }
-
-    res.send('Product deleted successfully');
+    res.json({ status: 'success', payload: product });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
 });
 
 export default router;
