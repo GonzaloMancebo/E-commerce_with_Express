@@ -17,49 +17,89 @@
         <p>Categoría: {{this.category}}</p>
         <a href="/products/{{this._id}}">Ver más</a>
         <button onclick="addToCart('{{this._id}}')">Agregar al carrito</button>
+        <button onclick="removeFromCart('{{this._id}}')" style="display:none;">Eliminar del carrito</button>
+        <p class="cart-message" style="display:none;">Producto agregado al carrito</p>
       </li>
     {{/each}}
   </ul>
 
   <div>
-    <!-- Enlace para la página anterior -->
+    <!-- Paginación (sin cambios) -->
     {{#if hasPrevPage}}
       <a href="/products?page={{prevPage}}&limit={{limit}}&sort={{sort}}&query={{query}}">Página Anterior</a>
+    {{else}}
+      <span>Página Anterior</span>
     {{/if}}
 
-    <!-- Mostrar los números de página -->
     <div>
       {{#each pages}}
-        <a href="/products?page={{this}}&limit={{limit}}&sort={{sort}}&query={{query}}">{{this}}</a>
+        {{#ifEquals ../page this}}
+          <strong>{{this}}</strong>
+        {{else}}
+          <a href="/products?page={{this}}&limit={{../limit}}&sort={{../sort}}&query={{../query}}">{{this}}</a>
+        {{/ifEquals}}
       {{/each}}
     </div>
 
-    <!-- Mostrar el número de página actual y el total -->
-    <span>Página {{page}} de {{totalPages}}</span>
-
-    <!-- Enlace para la página siguiente -->
     {{#if hasNextPage}}
       <a href="/products?page={{nextPage}}&limit={{limit}}&sort={{sort}}&query={{query}}">Página Siguiente</a>
+    {{else}}
+      <span>Página Siguiente</span>
     {{/if}}
   </div>
 
-  <script>
-    function addToCart(productId) {
-      fetch('/api/carts', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          productId: productId,
-          quantity: 1
-        })
-      }).then(response => response.json())
-        .then(data => {
-          console.log('Producto agregado al carrito:', data);
-        })
-        .catch(error => console.error('Error:', error));
-    }
-  </script>
+<script>
+  function addToCart(productId) {
+    fetch('/api/carts', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        productId: productId,
+        quantity: 1
+      })
+    }).then(response => response.json())
+      .then(data => {
+        console.log('Producto agregado al carrito:', data);
+
+        // Esperamos a que los elementos estén disponibles en el DOM
+        const productItem = document.querySelector(`[data-product-id="${productId}"]`);
+
+        if (productItem) {
+          // Mostrar el mensaje y el botón de eliminar
+          productItem.querySelector('.cart-message').style.display = 'block';
+          productItem.querySelector('.add-to-cart').style.display = 'none';  // Ocultar el botón de agregar
+          productItem.querySelector('.remove-from-cart').style.display = 'inline';  // Mostrar el botón de eliminar
+        }
+      })
+      .catch(error => console.error('Error:', error));
+  }
+
+  function removeFromCart(productId) {
+    fetch('/api/carts', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ productId: productId })
+    }).then(response => response.json())
+      .then(data => {
+        console.log('Producto eliminado del carrito:', data);
+
+        // Esperamos a que los elementos estén disponibles en el DOM
+        const productItem = document.querySelector(`[data-product-id="${productId}"]`);
+
+        if (productItem) {
+          // Ocultar el mensaje y el botón de eliminar
+          productItem.querySelector('.cart-message').style.display = 'none';
+          productItem.querySelector('.add-to-cart').style.display = 'inline';  // Mostrar el botón de agregar
+          productItem.querySelector('.remove-from-cart').style.display = 'none';  // Ocultar el botón de eliminar
+        }
+      })
+      .catch(error => console.error('Error:', error));
+  }
+</script>
+
 </body>
 </html>
