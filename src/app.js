@@ -11,6 +11,9 @@ import cartRouter from './routes/cart.route.js';
 import Product from './models/Product.js';
 import Cart from './models/Cart.js'; // Asegúrate de importar el modelo de Cart
 import connectDB from './config/db.js';
+import cookieParser from 'cookie-parser'; // Para manejar las cookies
+import passport from 'passport'; // Para autenticación con Passport
+import sessionRouter from './routes/sessions/sessions.router.js'; // Rutas de autenticación
 
 const app = express();
 const PORT = process.env.PORT || 8080; 
@@ -40,11 +43,13 @@ app.set('views', viewsPath);
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(process.cwd(), 'src', 'public')));
+app.use(cookieParser()); // Para leer las cookies en las solicitudes
+app.use(passport.initialize()); // Inicializar Passport para la autenticación
 
 // Rutas
 app.use('/api/products', productRouter);
 app.use('/api/carts', cartRouter);
+app.use('/api/sessions', sessionRouter); // Ruta de autenticación
 
 // Ruta principal
 app.get('/', async (req, res) => {
