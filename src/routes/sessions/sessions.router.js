@@ -1,5 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import User from "../../models/User.js";
 import { authenticateJWT } from "../../middlewares/auth.js";
 
@@ -31,30 +32,63 @@ router.post("/register", async (req, res) => {
   }
 });
 
-
 // Login de usuario
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Verificar si se está recibiendo el email y la contraseña en la solicitud
+    console.log('Login attempt:', email, password);
+
     const user = await User.findOne({ email });
 
-    if (!user || !user.comparePassword(password)) {
+    // Verificar si el usuario existe
+    if (!user) {
       return res.status(400).json({ message: "Credenciales incorrectas" });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    // Verificar si la contraseña coincide
+    const passwordMatch = await user.comparePassword(password);
+    console.log("Contraseña válida:", passwordMatch);  // Ver si la contraseña coincide
 
+    if (!passwordMatch) {
+      return res.status(400).json({ message: "Credenciales incorrectas" });
+    }
+
+    //generar el token con más datos del usuario
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+        first_name: user.first_name,      
+            last_name: user.last_name,     
+        email: user.email,                 
+          age: user.age                  
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    // Enviar el token y la respuesta
     res.cookie("token", token, { httpOnly: true }).json({ message: "Login exitoso", token });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Error en el servidor", error });
   }
 });
 
 // Ruta protegida para obtener el usuario actual
 router.get("/current", authenticateJWT, (req, res) => {
-  res.json({ user: req.user });
+  res.json({
+    user: {
+      id: req.user.id,
+      first_name: req.user.first_name,  
+      last_name: req.user.last_name,    
+      email: req.user.email,            
+      age: req.user.age,                
+      role: req.user.role               
+    }
+  });
 });
 
 // Logout
