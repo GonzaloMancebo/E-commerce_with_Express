@@ -14,6 +14,7 @@ import connectDB from './config/db.js';
 import cookieParser from 'cookie-parser'; // Para manejar las cookies
 import passport from 'passport'; // Para autenticación con Passport
 import sessionRouter from './routes/sessions/sessions.router.js'; // Rutas de autenticación
+import ticketsRouter from './routes/tickets.route.js';
 
 const app = express();
 const PORT = process.env.PORT || 8080; 
@@ -49,7 +50,9 @@ app.use(passport.initialize()); // Inicializar Passport para la autenticación
 // Rutas
 app.use('/api/products', productRouter);
 app.use('/api/carts', cartRouter);
-app.use('/api/sessions', sessionRouter); // Ruta de autenticación
+app.use('/api/sessions', sessionRouter); 
+app.use("/api/tickets", ticketsRouter);
+
 
 // Ruta principal
 app.get('/', async (req, res) => {

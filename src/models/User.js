@@ -12,7 +12,6 @@ const userSchema = new mongoose.Schema({
   role: { type: String, default: 'user' },
 });
 
-// Método para comparar la contraseña
 userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);  // Compara la contraseña encriptada con la ingresada
 };

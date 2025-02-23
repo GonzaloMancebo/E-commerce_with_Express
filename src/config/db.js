@@ -8,7 +8,6 @@ const connectDB = async () => {
       process.exit(1);  // Salir si no se encuentra la URI
     }
 
-    // Conexión a MongoDB (sin las opciones obsoletas)
     await mongoose.connect(mongoURI);
     console.log('MongoDB conectado');
   } catch (error) {

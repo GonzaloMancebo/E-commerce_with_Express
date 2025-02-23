@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import mongoosePaginate from 'mongoose-paginate-v2'; // Importar el plugin
+import mongoosePaginate from 'mongoose-paginate-v2'; 
 
 // Definimos el esquema para los productos
 const productSchema = new mongoose.Schema({
